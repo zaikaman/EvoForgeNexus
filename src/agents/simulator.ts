@@ -10,7 +10,7 @@
 
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId } from '../utils/helpers.js';
-import { askWithRotation } from '../utils/llm-wrapper.js';
+import { askWithRetry } from '../utils/llm-retry.js';
 import type { SimulationResult, IdeaProposal, AgentDNA } from '../types/index.js';
 
 export class SimulatorAgent {
@@ -108,7 +108,17 @@ Example valid response:
 Your JSON response:
 `;
 
-    const result = await askWithRotation(this.dna.model, prompt);
+    const result = await askWithRetry(
+      this.dna.model,
+      prompt,
+      'json-object',
+      {
+        viabilityScore: 'number',
+        metrics: 'any',
+        risks: 'array',
+        recommendations: 'array',
+      }
+    );
 
     const simulation = this.parseSimulationFromResponse(result);
 
@@ -128,7 +138,31 @@ Your JSON response:
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        let jsonStr = jsonMatch[0];
+        
+        // Find actual end of JSON
+        let braceCount = 0;
+        let jsonEnd = -1;
+        for (let i = 0; i < jsonStr.length; i++) {
+          if (jsonStr[i] === '{') braceCount++;
+          if (jsonStr[i] === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
+        }
+        if (jsonEnd > 0) {
+          jsonStr = jsonStr.substring(0, jsonEnd);
+        }
+        
+        // Clean
+        jsonStr = jsonStr
+          .replace(/,(\s*[}\]])/g, '$1')
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+        
+        return JSON.parse(jsonStr);
       }
 
       return {

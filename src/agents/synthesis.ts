@@ -10,7 +10,7 @@
 
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId, average } from '../utils/helpers.js';
-import { askWithRotation } from '../utils/llm-wrapper.js';
+import { askWithRetry } from '../utils/llm-retry.js';
 import type { 
   SynthesisResult, 
   IdeaProposal, 
@@ -132,15 +132,30 @@ Rules:
 - consensusLevel must be a number between 0 and 1
 - topIdeas array can be empty [] if no strong ideas
 - All trait values must be numbers between 0 and 1
-- Set readyForSpawn to true only if consensus >= 0.75
+- Set readyForSpawn to true if consensus >= 0.65 AND ideas show convergence
+- When readyForSpawn=true, recommend spawning specialist agents (optimization, implementation, research, etc.)
 
 Example valid response:
 {"topIdeas":["idea_lxyz123"],"combinedApproach":"Integrate quantum networking with mesh topology for scalable distributed system","consensusLevel":0.68,"readyForSpawn":false,"spawnRecommendations":null}
 
+Example with spawning:
+{"topIdeas":["idea_abc123"],"combinedApproach":"Hybrid AI system combining neural networks with symbolic reasoning","consensusLevel":0.72,"readyForSpawn":true,"spawnRecommendations":{"traitMix":{"creativity":0.6,"precision":0.9,"speed":0.7,"collaboration":0.8},"capabilities":["optimization","implementation"],"reasoning":"Need optimization specialist to refine performance metrics and implementation agent to create production-ready code"}}
+
 Your JSON response:
 `;
 
-    const result = await askWithRotation(this.dna.model, prompt);
+    const result = await askWithRetry(
+      this.dna.model,
+      prompt,
+      'json-object',
+      {
+        topIdeas: 'array',
+        combinedApproach: 'string',
+        consensusLevel: 'number',
+        readyForSpawn: 'any',
+        spawnRecommendations: 'any',
+      }
+    );
 
     const synthesis = this.parseSynthesisFromResponse(result, ideas);
 
@@ -165,7 +180,31 @@ Your JSON response:
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        let jsonStr = jsonMatch[0];
+        
+        // Find actual end of JSON
+        let braceCount = 0;
+        let jsonEnd = -1;
+        for (let i = 0; i < jsonStr.length; i++) {
+          if (jsonStr[i] === '{') braceCount++;
+          if (jsonStr[i] === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
+        }
+        if (jsonEnd > 0) {
+          jsonStr = jsonStr.substring(0, jsonEnd);
+        }
+        
+        // Clean
+        jsonStr = jsonStr
+          .replace(/,(\s*[}\]])/g, '$1')
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+        
+        return JSON.parse(jsonStr);
       }
 
       return {

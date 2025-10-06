@@ -10,7 +10,7 @@
 
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId } from '../utils/helpers.js';
-import { askWithRotation } from '../utils/llm-wrapper.js';
+import { askWithRetry } from '../utils/llm-retry.js';
 import type { CritiqueResult, IdeaProposal, SimulationResult, AgentDNA } from '../types/index.js';
 
 export class CriticAgent {
@@ -108,7 +108,18 @@ Example valid response:
 Your JSON response:
 `;
 
-    const result = await askWithRotation(this.dna.model, prompt);
+    const result = await askWithRetry(
+      this.dna.model,
+      prompt,
+      'json-object',
+      {
+        flaws: 'array',
+        strengths: 'array',
+        biasesDetected: 'array',
+        overallAssessment: 'string',
+        confidence: 'number',
+      }
+    );
 
     const critique = this.parseCritiqueFromResponse(result);
 
@@ -139,7 +150,24 @@ Your JSON response:
       
       let jsonStr = jsonMatch[0];
       
-      // Step 3: Aggressive cleaning
+      // Step 3: Find the actual end of JSON by counting braces
+      let braceCount = 0;
+      let jsonEnd = -1;
+      for (let i = 0; i < jsonStr.length; i++) {
+        if (jsonStr[i] === '{') braceCount++;
+        if (jsonStr[i] === '}') {
+          braceCount--;
+          if (braceCount === 0) {
+            jsonEnd = i + 1;
+            break;
+          }
+        }
+      }
+      if (jsonEnd > 0) {
+        jsonStr = jsonStr.substring(0, jsonEnd);
+      }
+      
+      // Step 4: Aggressive cleaning
       jsonStr = jsonStr
         // Remove control characters
         .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
@@ -152,10 +180,10 @@ Your JSON response:
         .replace(/\s+/g, ' ')
         .trim();
       
-      // Step 4: Try parsing
+      // Step 5: Try parsing
       const parsed = JSON.parse(jsonStr);
       
-      // Step 5: Validate structure
+      // Step 6: Validate structure
       if (!parsed.flaws || !Array.isArray(parsed.flaws)) {
         parsed.flaws = [];
       }
@@ -175,7 +203,8 @@ Your JSON response:
       return parsed;
     } catch (error) {
       console.error('Failed to parse critique:', error);
-      console.error('Content preview:', content.substring(0, 200));
+      console.error('Raw content length:', content.length);
+      console.error('Content preview:', content.substring(0, 500));
       return this.getFallbackCritique('Parsing error occurred');
     }
   }

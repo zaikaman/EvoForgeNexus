@@ -7,7 +7,7 @@ export const EVOLUTION_CONFIG = {
   DEFAULT_MAX_ITERATIONS: 10,
   DEFAULT_MAX_AGENTS: 20,
   DEFAULT_MUTATION_RATE: 0.3,
-  CONSENSUS_THRESHOLD: 0.7,
+  CONSENSUS_THRESHOLD: 0.65, // Lowered to trigger spawning easier
   CONVERGENCE_THRESHOLD: 0.85,
   MIN_AGENT_FITNESS: 0.4,
   SPAWN_COOLDOWN_MS: 2000,
@@ -21,12 +21,12 @@ export const DEFAULT_TRAITS = {
   collaboration: 0.5,
 } as const;
 
-// LLM model configurations (using Gemini)
+// LLM model configurations (using OpenAI GPT-5-nano)
 export const MODEL_CONFIG = {
-  IDEATOR: process.env.DEFAULT_IDEATOR_MODEL || 'gemini-2.5-flash',
-  SIMULATOR: process.env.DEFAULT_SIMULATOR_MODEL || 'gemini-2.5-flash',
-  CRITIC: process.env.DEFAULT_CRITIC_MODEL || 'gemini-2.5-flash',
-  SYNTHESIS: process.env.DEFAULT_SYNTHESIS_MODEL || 'gemini-2.5-flash',
+  IDEATOR: process.env.DEFAULT_IDEATOR_MODEL || 'gpt-5-nano',
+  SIMULATOR: process.env.DEFAULT_SIMULATOR_MODEL || 'gpt-5-nano',
+  CRITIC: process.env.DEFAULT_CRITIC_MODEL || 'gpt-5-nano',
+  SYNTHESIS: process.env.DEFAULT_SYNTHESIS_MODEL || 'gpt-5-nano',
 } as const;
 
 // Agent capabilities

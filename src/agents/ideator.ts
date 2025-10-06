@@ -10,7 +10,7 @@
 
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId } from '../utils/helpers.js';
-import { askWithRotation } from '../utils/llm-wrapper.js';
+import { askWithRetry } from '../utils/llm-retry.js';
 import type { IdeaProposal, EvolutionMandate, AgentDNA } from '../types/index.js';
 
 export class IdeatorAgent {
@@ -112,8 +112,18 @@ Example valid response:
 Your JSON array with ${count} ideas:
 `;
 
-    // Use LLM wrapper with API key rotation
-    const result = await askWithRotation(this.dna.model, prompt);
+    // Use retry wrapper
+    const result = await askWithRetry(
+      this.dna.model,
+      prompt,
+      'json-array',
+      {
+        title: 'string',
+        description: 'string',
+        approach: 'string',
+        noveltyScore: 'number',
+      }
+    );
 
     // Parse response
     const ideas = this.parseIdeasFromResponse(result);
@@ -134,10 +144,34 @@ Your JSON array with ${count} ideas:
    */
   private parseIdeasFromResponse(content: string): any[] {
     try {
-      // Try to extract JSON from response
+      // Try to extract JSON array from response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        let jsonStr = jsonMatch[0];
+        
+        // Find actual end of array by counting brackets
+        let bracketCount = 0;
+        let jsonEnd = -1;
+        for (let i = 0; i < jsonStr.length; i++) {
+          if (jsonStr[i] === '[') bracketCount++;
+          if (jsonStr[i] === ']') {
+            bracketCount--;
+            if (bracketCount === 0) {
+              jsonEnd = i + 1;
+              break;
+            }
+          }
+        }
+        if (jsonEnd > 0) {
+          jsonStr = jsonStr.substring(0, jsonEnd);
+        }
+        
+        // Clean and parse
+        jsonStr = jsonStr
+          .replace(/,(\s*[}\]])/g, '$1')
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+        
+        return JSON.parse(jsonStr);
       }
 
       // Fallback: manual parsing

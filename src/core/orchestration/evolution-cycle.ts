@@ -215,19 +215,34 @@ export class EvolutionCycle {
       
       const specialistDNA = spawnSpecialist(capability, avgTraits);
 
-      // Instantiate actual agent based on capability
-      if (capability === 'ideation') {
+      // Map any capability to closest agent type
+      let agentType: 'ideator' | 'simulator' | 'critic' = 'ideator';
+      
+      // Research/optimization/implementation → Ideator (creative problem solving)
+      if (['research', 'optimization', 'implementation', 'integration', 'design'].includes(capability)) {
+        agentType = 'ideator';
+      }
+      // Testing/validation/data/analytics → Simulator (analysis & testing)
+      else if (['testing', 'validation', 'data', 'analytics', 'data-infrastructure', 'data governance'].includes(capability)) {
+        agentType = 'simulator';
+      }
+      // Policy/governance/quality/review → Critic (evaluation & standards)
+      else if (['policy', 'governance', 'quality', 'review', 'policy-integration', 'systems engineering'].includes(capability)) {
+        agentType = 'critic';
+      }
+
+      // Instantiate actual agent
+      if (agentType === 'ideator') {
         const newAgent = new IdeatorAgent();
-        // Copy specialized DNA traits
         Object.assign(newAgent.dna.traits, specialistDNA.traits);
         this.swarm.addIdeator(newAgent);
         spawned++;
-      } else if (capability === 'simulation') {
+      } else if (agentType === 'simulator') {
         const newAgent = new SimulatorAgent();
         Object.assign(newAgent.dna.traits, specialistDNA.traits);
         this.swarm.addSimulator(newAgent);
         spawned++;
-      } else if (capability === 'critique') {
+      } else if (agentType === 'critic') {
         const newAgent = new CriticAgent();
         Object.assign(newAgent.dna.traits, specialistDNA.traits);
         this.swarm.addCritic(newAgent);

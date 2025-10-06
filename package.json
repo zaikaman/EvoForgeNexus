@@ -25,7 +25,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@iqai/adk": "^0.3.6",
+    "@iqai/adk": "file:./adk-ts/packages/adk",
     "dotenv": "^16.4.5",
     "reactflow": "^11.11.4"
   },
