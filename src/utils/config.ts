@@ -21,7 +21,7 @@ export const DEFAULT_TRAITS = {
   collaboration: 0.5,
 } as const;
 
-// LLM model configurations (all using Gemini)
+// LLM model configurations (using Gemini)
 export const MODEL_CONFIG = {
   IDEATOR: process.env.DEFAULT_IDEATOR_MODEL || 'gemini-2.5-flash',
   SIMULATOR: process.env.DEFAULT_SIMULATOR_MODEL || 'gemini-2.5-flash',

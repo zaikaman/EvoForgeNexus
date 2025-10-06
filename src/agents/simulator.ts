@@ -8,9 +8,9 @@
  * - Risk assessment
  */
 
-import { AgentBuilder } from '@iqai/adk';
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId } from '../utils/helpers.js';
+import { askWithRotation } from '../utils/llm-wrapper.js';
 import type { SimulationResult, IdeaProposal, AgentDNA } from '../types/index.js';
 
 export class SimulatorAgent {
@@ -77,31 +77,38 @@ Title: ${idea.title}
 Description: ${idea.description}
 Approach: ${idea.approach}
 
-TASK: Run a comprehensive simulation to assess the viability of this idea.
+SIMULATION TASK: Assess the viability of this idea with data-driven analysis.
 
-Provide a detailed analysis in JSON format:
+IMPORTANT: You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
+
+Required JSON schema:
 {
   "viabilityScore": 0.75,
   "metrics": {
-    "estimatedCost": "Description of cost",
-    "timeToImplement": "Time estimate",
+    "estimatedCost": "string",
+    "timeToImplement": "string",
     "technicalComplexity": 0.6,
     "scalability": 0.8
   },
-  "risks": [
-    "Risk 1",
-    "Risk 2"
-  ],
-  "recommendations": [
-    "Recommendation 1",
-    "Recommendation 2"
-  ]
+  "risks": ["string", "string"],
+  "recommendations": ["string", "string"]
 }
+
+Rules:
+- Output ONLY the JSON object
+- No trailing commas
+- Use double quotes for strings
+- viabilityScore must be a number between 0 and 1
+- metrics.technicalComplexity and metrics.scalability must be numbers between 0 and 1
+- risks and recommendations arrays must contain at least 1 item each
+
+Example valid response:
+{"viabilityScore":0.72,"metrics":{"estimatedCost":"$50K-100K","timeToImplement":"6-9 months","technicalComplexity":0.65,"scalability":0.8},"risks":["Market timing uncertain","Technical dependencies"],"recommendations":["Start with MVP","Secure early partnerships"]}
+
+Your JSON response:
 `;
 
-    const result = await AgentBuilder
-      .withModel(this.dna.model)
-      .ask(prompt);
+    const result = await askWithRotation(this.dna.model, prompt);
 
     const simulation = this.parseSimulationFromResponse(result);
 

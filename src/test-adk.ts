@@ -16,7 +16,7 @@ async function testADKIntegration() {
     // Test 1: Simple query with AgentBuilder
     console.log('Test 1: Simple query with AgentBuilder');
     const response = await AgentBuilder
-      .withModel('gemini-2.5-flash')
+      .withModel('gemini-2.5-flash-lite')
       .ask('What is 15 + 27? Just give me the number.');
 
     console.log('✅ Response:', response);
@@ -26,7 +26,7 @@ async function testADKIntegration() {
     console.log('Test 2: Create a basic agent');
     const { agent } = await AgentBuilder
       .create('test_agent')
-      .withModel('gemini-2.5-flash')
+      .withModel('gemini-2.5-flash-lite')
       .withDescription('A test agent for integration testing')
       .withInstruction('You are a helpful test agent. Keep responses concise.')
       .build();

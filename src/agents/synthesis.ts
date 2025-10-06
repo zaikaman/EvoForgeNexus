@@ -8,9 +8,9 @@
  * - Decision making on agent spawning
  */
 
-import { AgentBuilder } from '@iqai/adk';
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId, average } from '../utils/helpers.js';
+import { askWithRotation } from '../utils/llm-wrapper.js';
 import type { 
   SynthesisResult, 
   IdeaProposal, 
@@ -96,17 +96,22 @@ ${critiques.map((c, i) => `${i + 1}. Assessment: ${c.overallAssessment}, Flaws: 
 
 TASK: Synthesize these inputs into a unified recommendation.
 
-Provide your synthesis in JSON format:
+IMPORTANT: You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
+
+Required JSON schema:
 {
-  "topIdeas": ["idea_id_1", "idea_id_2"],
-  "combinedApproach": "Detailed description of the synthesized solution...",
+  "topIdeas": ["string"],
+  "combinedApproach": "string",
   "consensusLevel": 0.75,
   "readyForSpawn": false,
   "spawnRecommendations": null
 }
 
-If readyForSpawn is true, include:
+If readyForSpawn is true, use this structure:
 {
+  "topIdeas": ["string"],
+  "combinedApproach": "string",
+  "consensusLevel": 0.75,
   "readyForSpawn": true,
   "spawnRecommendations": {
     "traitMix": {
@@ -115,15 +120,27 @@ If readyForSpawn is true, include:
       "speed": 0.6,
       "collaboration": 0.7
     },
-    "capabilities": ["optimization", "implementation"],
-    "reasoning": "Why we need this new agent"
+    "capabilities": ["string"],
+    "reasoning": "string"
   }
 }
+
+Rules:
+- Output ONLY the JSON object
+- No trailing commas
+- Use double quotes for strings
+- consensusLevel must be a number between 0 and 1
+- topIdeas array can be empty [] if no strong ideas
+- All trait values must be numbers between 0 and 1
+- Set readyForSpawn to true only if consensus >= 0.75
+
+Example valid response:
+{"topIdeas":["idea_lxyz123"],"combinedApproach":"Integrate quantum networking with mesh topology for scalable distributed system","consensusLevel":0.68,"readyForSpawn":false,"spawnRecommendations":null}
+
+Your JSON response:
 `;
 
-    const result = await AgentBuilder
-      .withModel(this.dna.model)
-      .ask(prompt);
+    const result = await askWithRotation(this.dna.model, prompt);
 
     const synthesis = this.parseSynthesisFromResponse(result, ideas);
 

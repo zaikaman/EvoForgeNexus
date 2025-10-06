@@ -8,9 +8,9 @@
  * - Idea generation and expansion
  */
 
-import { AgentBuilder } from '@iqai/adk';
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId } from '../utils/helpers.js';
+import { askWithRotation } from '../utils/llm-wrapper.js';
 import type { IdeaProposal, EvolutionMandate, AgentDNA } from '../types/index.js';
 
 export class IdeatorAgent {
@@ -85,29 +85,35 @@ ${mandate.constraints ? `Constraints: ${mandate.constraints.join(', ')}` : ''}
 Success Criteria: ${mandate.successCriteria.join(', ')}
 ${mandate.domain ? `Domain: ${mandate.domain}` : ''}
 
-TASK: Generate ${count} innovative, creative ideas to address this challenge.
+CREATIVE TASK: Generate ${count} innovative ideas to address this challenge.
 
-For each idea, provide:
-1. Title (concise, memorable)
-2. Description (detailed explanation)
-3. Approach (step-by-step method)
-4. Novelty Score (0-1, assess how novel/original this is)
+IMPORTANT: You MUST respond with ONLY a valid JSON array. No markdown, no code blocks, no explanations.
 
-Format as JSON array:
+Required JSON schema:
 [
   {
-    "title": "Idea title",
-    "description": "Detailed description",
-    "approach": "Implementation approach",
+    "title": "string",
+    "description": "string",
+    "approach": "string",
     "noveltyScore": 0.85
   }
 ]
+
+Rules:
+- Output ONLY the JSON array with exactly ${count} ideas
+- No trailing commas
+- Use double quotes for strings
+- noveltyScore must be a number between 0 and 1
+- Each idea must have all 4 fields: title, description, approach, noveltyScore
+
+Example valid response:
+[{"title":"Quantum Mesh Network","description":"Decentralized quantum communication system","approach":"Use quantum entanglement for instant data transfer","noveltyScore":0.92}]
+
+Your JSON array with ${count} ideas:
 `;
 
-    // Use AgentBuilder for simpler API
-    const result = await AgentBuilder
-      .withModel(this.dna.model)
-      .ask(prompt);
+    // Use LLM wrapper with API key rotation
+    const result = await askWithRotation(this.dna.model, prompt);
 
     // Parse response
     const ideas = this.parseIdeasFromResponse(result);

@@ -8,9 +8,9 @@
  * - Constructive criticism
  */
 
-import { AgentBuilder } from '@iqai/adk';
 import { MODEL_CONFIG, CAPABILITIES } from '../utils/config.js';
 import { generateId } from '../utils/helpers.js';
+import { askWithRotation } from '../utils/llm-wrapper.js';
 import type { CritiqueResult, IdeaProposal, SimulationResult, AgentDNA } from '../types/index.js';
 
 export class CriticAgent {
@@ -81,29 +81,34 @@ Approach: ${(target as IdeaProposal).approach}` :
 Metrics: ${JSON.stringify((target as SimulationResult).metrics)}
 Risks: ${(target as SimulationResult).risks.join(', ')}`}
 
-TASK: Provide a thorough critical analysis of this ${isIdea ? 'idea' : 'simulation'}.
+CRITICAL TASK: Provide a thorough critical analysis.
 
-Provide your critique in JSON format:
+IMPORTANT: You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
+
+Required JSON schema:
 {
-  "flaws": [
-    "Flaw 1",
-    "Flaw 2"
-  ],
-  "strengths": [
-    "Strength 1",
-    "Strength 2"
-  ],
-  "biasesDetected": [
-    "Bias 1"
-  ],
-  "overallAssessment": "needs_revision",
+  "flaws": ["string", "string"],
+  "strengths": ["string", "string"],
+  "biasesDetected": ["string"],
+  "overallAssessment": "approve" | "needs_revision" | "reject",
   "confidence": 0.8
 }
+
+Rules:
+- Output ONLY the JSON object
+- Arrays must contain at least 1 item
+- No trailing commas
+- Use double quotes for strings
+- overallAssessment must be exactly one of: "approve", "needs_revision", "reject"
+- confidence must be a number between 0 and 1
+
+Example valid response:
+{"flaws":["Lacks scalability analysis","Unclear implementation path"],"strengths":["Novel approach","Addresses core problem"],"biasesDetected":["Confirmation bias in metrics"],"overallAssessment":"needs_revision","confidence":0.75}
+
+Your JSON response:
 `;
 
-    const result = await AgentBuilder
-      .withModel(this.dna.model)
-      .ask(prompt);
+    const result = await askWithRotation(this.dna.model, prompt);
 
     const critique = this.parseCritiqueFromResponse(result);
 
@@ -122,28 +127,67 @@ Provide your critique in JSON format:
 
   private parseCritiqueFromResponse(content: string): any {
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      // Step 1: Remove markdown code blocks if present
+      let cleaned = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+      
+      // Step 2: Extract JSON object
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('No JSON object found in response');
+        return this.getFallbackCritique('No JSON object found');
       }
-
-      return {
-        flaws: ['Unable to parse structured response'],
-        strengths: [],
-        biasesDetected: [],
-        overallAssessment: 'needs_revision',
-        confidence: 0.5,
-      };
+      
+      let jsonStr = jsonMatch[0];
+      
+      // Step 3: Aggressive cleaning
+      jsonStr = jsonStr
+        // Remove control characters
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        // Fix trailing commas in arrays/objects
+        .replace(/,(\s*[}\]])/g, '$1')
+        // Remove comments
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/.*/g, '')
+        // Normalize whitespace
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Step 4: Try parsing
+      const parsed = JSON.parse(jsonStr);
+      
+      // Step 5: Validate structure
+      if (!parsed.flaws || !Array.isArray(parsed.flaws)) {
+        parsed.flaws = [];
+      }
+      if (!parsed.strengths || !Array.isArray(parsed.strengths)) {
+        parsed.strengths = [];
+      }
+      if (!parsed.biasesDetected || !Array.isArray(parsed.biasesDetected)) {
+        parsed.biasesDetected = [];
+      }
+      if (!parsed.overallAssessment) {
+        parsed.overallAssessment = 'needs_revision';
+      }
+      if (typeof parsed.confidence !== 'number') {
+        parsed.confidence = 0.5;
+      }
+      
+      return parsed;
     } catch (error) {
       console.error('Failed to parse critique:', error);
-      return {
-        flaws: ['Parsing error occurred'],
-        strengths: [],
-        biasesDetected: [],
-        overallAssessment: 'needs_revision',
-        confidence: 0.5,
-      };
+      console.error('Content preview:', content.substring(0, 200));
+      return this.getFallbackCritique('Parsing error occurred');
     }
+  }
+  
+  private getFallbackCritique(reason: string): any {
+    return {
+      flaws: [reason],
+      strengths: [],
+      biasesDetected: [],
+      overallAssessment: 'needs_revision',
+      confidence: 0.5,
+    };
   }
 
   getDNA(): AgentDNA {
