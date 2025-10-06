@@ -12,6 +12,7 @@
     "test:ideator": "tsx src/test-ideator.ts",
     "test:evolution": "tsx src/test-evolution.ts",
     "test:genesis": "tsx src/test-genesis.ts",
+    "test:full": "tsx src/test-full-evolution.ts",
     "test": "echo \"Tests coming soon\" && exit 0"
   },
   "keywords": [
