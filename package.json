@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test:adk": "tsx src/test-adk.ts",
+    "test:ideator": "tsx src/test-ideator.ts",
     "test": "echo \"Tests coming soon\" && exit 0"
   },
   "keywords": [
