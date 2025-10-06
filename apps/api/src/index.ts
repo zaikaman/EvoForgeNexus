@@ -1,8 +1,3 @@
-/**
- * EvoForge Nexus API Server
- * Real-time evolution streaming with WebSocket
- */
-
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -10,6 +5,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { evolutionRouter } from './routes/evolution.js';
 import { agentsRouter } from './routes/agents.js';
+import battleRouter from './routes/battle.js';
+import problemsRouter from './routes/problems.js';
 import { getApiKeyStatus } from '../../../src/utils/llm-wrapper.js';
 
 dotenv.config();
@@ -54,6 +51,8 @@ app.get('/api/keys/status', (req, res) => {
 // API Routes
 app.use('/api/evolution', evolutionRouter);
 app.use('/api/agents', agentsRouter);
+app.use('/api/battles', battleRouter);
+app.use('/api/problems', problemsRouter);
 
 // WebSocket connection handling
 wss.on('connection', (ws: WebSocket) => {

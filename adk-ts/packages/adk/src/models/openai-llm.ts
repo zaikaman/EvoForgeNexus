@@ -16,7 +16,7 @@ export class OpenAiLlm extends BaseLlm {
 	/**
 	 * Constructor for OpenAI LLM
 	 */
-	constructor(model = "gpt-4o-mini") {
+	constructor(model = "gpt-5-nano") {
 		super(model);
 	}
 

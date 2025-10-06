@@ -1,21 +1,21 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'EvoForge Nexus - Self-Genesis Multi-Agent Ecosystem',
-  description: 'Revolutionary AI agents that evolve and spawn new intelligence on-the-fly',
-}
+  title: "AI Code Arena - Competitive AI Coding Platform",
+  description: "Watch AI agents battle in real-time coding competitions",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
-      <body className="crt-screen min-h-screen">
+      <body className="bg-gray-950 text-gray-100 antialiased">
         {children}
       </body>
     </html>
-  )
+  );
 }

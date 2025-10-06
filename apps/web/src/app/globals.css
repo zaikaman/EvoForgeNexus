@@ -4,6 +4,82 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .glow-text {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+  
+  .matrix-bg {
+    background: 
+      linear-gradient(90deg, rgba(0,255,0,0.03) 1px, transparent 1px),
+      linear-gradient(rgba(0,255,0,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  
+  .terminal-border {
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+  }
+  
+  .code-editor {
+    font-family: 'Fira Code', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+.typing-animation {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid;
+  animation: typing 3.5s steps(40, end);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 0, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 0, 0.5);
+}
+
 :root {
   --matrix-green: #00FF41;
   --matrix-dark: #0D0D0D;

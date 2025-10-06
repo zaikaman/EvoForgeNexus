@@ -13,6 +13,8 @@
     "test:evolution": "tsx src/test-evolution.ts",
     "test:genesis": "tsx src/test-genesis.ts",
     "test:full": "tsx src/test-full-evolution.ts",
+    "test:arena": "tsx src/test-arena.ts",
+    "arena": "tsx src/test-arena.ts",
     "test": "echo \"Tests coming soon\" && exit 0"
   },
   "keywords": [

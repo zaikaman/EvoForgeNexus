@@ -9,3 +9,7 @@ export * from "./run-config";
 export * from "./invocation-context";
 export * from "./readonly-context";
 export * from "./callback-context";
+
+// AUTO-CODER agents
+export * from "./code-generator-agent";
+export * from "./architect-agent";

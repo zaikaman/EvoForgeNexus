@@ -16,7 +16,7 @@ export interface AgentDNA {
     collaboration: number;   // 0-1: How well agent works with others
   };
   capabilities: string[];    // List of capabilities (e.g., "ideation", "simulation")
-  model: string;            // LLM model to use (e.g., "gpt-4-turbo")
+  model: string;            // LLM model to use (e.g., "gpt-5-nano")
   instructions: string;     // System instructions for the agent
   toolNames: string[];      // Tools available to this agent
   parentIds?: string[];     // Parent agent IDs (for lineage tracking)
